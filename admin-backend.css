@@ -1,0 +1,832 @@
+
+
+/* ==========================================================================
+   Consolidated Backend Styles
+   ========================================================================== */
+
+.mundula-list-edit-link:hover {
+            text-decoration: underline !important;
+            opacity: 0.8;
+        }
+        #mundula-table tbody tr {
+            cursor: pointer;
+        }
+        #mundula-table tbody tr input,
+        #mundula-table tbody tr select,
+        #mundula-table tbody tr button,
+        #mundula-table tbody tr a {
+            cursor: default;
+        }
+        .mundula-row-urgent {
+            background: #fff5f5 !important;
+            border-left: 3px solid #dc2626 !important;
+        }
+        .mundula-row-urgent.alternate {
+            background: #ffebeb !important;
+        }
+        .mundula-toggle-urgent-star:hover {
+            color: #dc2626 !important;
+        }
+        /* Responsywność dla wtyczki Mundula */
+        #mundula-panel .mundula-stats-container {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+        #mundula-panel .mundula-stat-card {
+            flex: 1 1 calc(16.66% - 12px);
+            min-width: 165px;
+            padding: 12px 20px;
+            border-radius: 4px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            box-sizing: border-box;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+        #mundula-panel .mundula-stat-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 6px rgba(0,0,0,0.08);
+        }
+        @media screen and (max-width: 1200px) {
+            #mundula-panel .mundula-stat-card {
+                flex: 1 1 calc(33.33% - 12px);
+            }
+        }
+        @media screen and (max-width: 782px) {
+            #mundula-panel .mundula-stats-container {
+                flex-wrap: nowrap !important;
+                overflow-x: auto !important;
+                -webkit-overflow-scrolling: touch;
+                padding-bottom: 8px;
+                scrollbar-width: none;
+            }
+            #mundula-panel .mundula-stats-container::-webkit-scrollbar {
+                display: none;
+            }
+            #mundula-panel .mundula-stat-card {
+                flex: 0 0 auto !important;
+                width: 140px !important;
+                min-width: 140px !important;
+                padding: 10px 14px !important;
+            }
+        }
+
+        #mundula-panel .mundula-filters-form {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            flex-wrap: wrap;
+            margin: 16px 0;
+        }
+        @media screen and (max-width: 782px) {
+            #mundula-panel .mundula-filters-form {
+                flex-direction: column;
+                align-items: stretch !important;
+                gap: 8px;
+            }
+            #mundula-panel .mundula-filters-form > * {
+                width: 100% !important;
+                margin: 0 !important;
+                box-sizing: border-box !important;
+                display: block !important;
+                text-align: center !important;
+            }
+            #mundula-panel .mundula-filters-form select,
+            #mundula-panel .mundula-filters-form input[type="text"],
+            #mundula-panel .mundula-filters-form input[type="search"] {
+                font-size: 16px !important;
+                padding: 8px !important;
+                text-align: left !important;
+                height: auto !important;
+            }
+        }
+
+        .mundula-table-responsive {
+            width: 100%;
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+            margin-bottom: 20px;
+            border: 1px solid #ccd0d4;
+            border-radius: 6px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+            background: #fff;
+        }
+
+        #mundula-table {
+            table-layout: auto !important;
+        }
+        #mundula-table th, #mundula-table td {
+            word-wrap: break-word;
+            white-space: normal;
+        }
+        #mundula-table th:nth-child(3), #mundula-table td:nth-child(3) { min-width: 140px; } /* Status / Nr / Data */
+        #mundula-table th:nth-child(4), #mundula-table td:nth-child(4) { min-width: 110px; } /* Dostarczenie */
+        #mundula-table th:nth-child(5), #mundula-table td:nth-child(5) { min-width: 120px; } /* Mundur / Stopień */
+        #mundula-table th:nth-child(6), #mundula-table td:nth-child(6) { min-width: 180px; } /* Zakres prac */
+        #mundula-table th:nth-child(7), #mundula-table td:nth-child(7) { min-width: 90px;  } /* Wartość */
+        #mundula-table th:nth-child(8), #mundula-table td:nth-child(8) { min-width: 120px; } /* Kontakt */
+        #mundula-table th:nth-child(9), #mundula-table td:nth-child(9) { min-width: 110px; } /* Akcje */
+
+        @media screen and (max-width: 782px) {
+            .mundula-table-responsive {
+                border: none;
+                box-shadow: none;
+                background: transparent;
+            }
+            #mundula-table,
+            #mundula-table tbody,
+            #mundula-table tr {
+                display: flex !important;
+                flex-direction: column !important;
+                width: 100% !important;
+            }
+            #mundula-table thead {
+                display: none !important;
+            }
+            #mundula-table tr {
+                flex-wrap: wrap !important;
+                flex-direction: row !important;
+                margin-bottom: 16px;
+                border: 1px solid #c3c4c7 !important;
+                border-radius: 8px !important;
+                background: #fff !important;
+                padding: 12px 16px !important;
+                box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05), 0 2px 4px -1px rgba(0,0,0,0.025) !important;
+                box-sizing: border-box !important;
+            }
+            #mundula-table tr.alternate {
+                background: #fafafa !important;
+            }
+            #mundula-table td {
+                display: block !important;
+                width: 100% !important;
+                padding: 8px 0 !important;
+                border: none !important;
+                border-bottom: 1px dashed #e2e8f0 !important;
+                text-align: left !important;
+                box-sizing: border-box;
+                min-width: 0 !important;
+            }
+            #mundula-table td:last-child {
+                border-bottom: none !important;
+            }
+
+            /* Order elements into a beautiful header and body layout */
+            #mundula-table td.col-checkbox {
+                display: inline-block !important;
+                width: 32px !important;
+                border-bottom: 1px solid #e2e8f0 !important;
+                vertical-align: middle;
+                padding-right: 0 !important;
+                order: 1 !important;
+                padding-bottom: 10px !important;
+            }
+            #mundula-table td[data-label="Status / Nr / Data"] {
+                display: inline-block !important;
+                width: calc(100% - 112px) !important;
+                border-bottom: 1px solid #e2e8f0 !important;
+                vertical-align: middle;
+                order: 2 !important;
+                padding-bottom: 10px !important;
+            }
+            #mundula-table td.col-prio {
+                display: inline-block !important;
+                width: 80px !important;
+                border-bottom: 1px solid #e2e8f0 !important;
+                vertical-align: middle;
+                text-align: right !important;
+                padding-right: 0 !important;
+                order: 3 !important;
+                padding-bottom: 10px !important;
+            }
+            #mundula-table td.col-prio .mundula-urgent-star-indicator {
+                float: left;
+                margin-top: 3px;
+            }
+            #mundula-table td.col-prio .mundula-priorytet {
+                margin-left: auto;
+            }
+
+            #mundula-table td[data-label="Kontakt"] {
+                display: inline-block !important;
+                width: 50% !important;
+                padding-right: 12px !important;
+                vertical-align: top !important;
+                order: 4 !important;
+                padding-top: 10px !important;
+            }
+            #mundula-table td[data-label="Mundur / Stopień"] {
+                display: inline-block !important;
+                width: 50% !important;
+                padding-left: 12px !important;
+                vertical-align: top !important;
+                text-align: right !important;
+                order: 5 !important;
+                padding-top: 10px !important;
+            }
+            #mundula-table td[data-label="Dostarczenie"] {
+                display: inline-block !important;
+                width: 50% !important;
+                padding-right: 12px !important;
+                vertical-align: top !important;
+                order: 6 !important;
+            }
+            #mundula-table td[data-label="Wartość"] {
+                display: inline-block !important;
+                width: 50% !important;
+                padding-left: 12px !important;
+                vertical-align: top !important;
+                text-align: right !important;
+                order: 7 !important;
+            }
+            #mundula-table td[data-label="Opłacone"] {
+                display: block !important;
+                width: 100% !important;
+                order: 8 !important;
+                border-bottom: none !important;
+                padding-top: 6px !important;
+                padding-bottom: 6px !important;
+            }
+            #mundula-table td[data-label="Zakres prac"] {
+                display: block !important;
+                width: 100% !important;
+                border-bottom: 1px dashed #e2e8f0 !important;
+                order: 9 !important;
+                padding-top: 6px !important;
+                padding-bottom: 8px !important;
+            }
+
+            /* Modern, clean inline uppercase labels with colon */
+            #mundula-table td[data-label]::before {
+                content: attr(data-label) ": " !important;
+                display: inline-block !important;
+                font-size: 9px !important;
+                font-weight: 700 !important;
+                color: #94a3b8 !important;
+                text-transform: uppercase !important;
+                margin-right: 4px !important;
+                letter-spacing: 0.05em;
+            }
+
+            /* Hide labels that are completely redundant or self-explanatory */
+            #mundula-table td[data-label="Status / Nr / Data"]::before,
+            #mundula-table td[data-label="Dostarczenie"]::before,
+            #mundula-table td[data-label="Kontakt"]::before,
+            #mundula-table td[data-label="Mundur / Stopień"]::before {
+                display: none !important;
+            }
+
+            /* Keep block label for Zakres prac for readability */
+            #mundula-table td[data-label="Zakres prac"]::before {
+                display: block !important;
+                margin-bottom: 4px !important;
+            }
+        }
+
+        #mundula-edit .mundula-grid {
+            display: grid !important;
+            grid-template-columns: 1fr 1fr !important;
+            gap: 20px;
+            align-items: start;
+        }
+        @media screen and (max-width: 960px) {
+            #mundula-edit .mundula-grid {
+                grid-template-columns: 1fr !important;
+                gap: 16px;
+            }
+        }
+
+        @media screen and (max-width: 782px) {
+            #mundula-edit .form-table,
+            #mundula-edit .form-table tbody,
+            #mundula-edit .form-table tr,
+            #mundula-edit .form-table th,
+            #mundula-edit .form-table td {
+                display: block !important;
+                width: 100% !important;
+                box-sizing: border-box !important;
+            }
+            #mundula-edit .form-table tr {
+                border-bottom: 1px solid #f1f5f9 !important;
+                padding: 10px 0 !important;
+            }
+            #mundula-edit .form-table th {
+                padding: 0 0 6px 0 !important;
+                font-weight: 600 !important;
+                font-size: 11px !important;
+                color: #64748b !important;
+                text-transform: uppercase !important;
+                letter-spacing: 0.03em;
+                margin: 0 !important;
+                line-height: 1.3 !important;
+            }
+            #mundula-edit .form-table td {
+                padding: 0 !important;
+                margin: 0 !important;
+            }
+
+            #mundula-edit input[type="text"],
+            #mundula-edit input[type="number"],
+            #mundula-edit input[type="email"],
+            #mundula-edit input[type="date"],
+            #mundula-edit select,
+            #mundula-edit textarea {
+                width: 100% !important;
+                max-width: 100% !important;
+                box-sizing: border-box !important;
+                font-size: 16px !important; /* prevent iOS auto-zoom */
+                padding: 8px !important;
+                height: auto !important;
+            }
+
+            /* Reorganizacja tabeli zakresu prac (operations) na mobilne bloczki */
+            #zakres-table,
+            #zakres-body,
+            #zakres-table tbody,
+            #zakres-table tr {
+                display: block !important;
+                width: 100% !important;
+                min-width: 0 !important;
+            }
+            #zakres-table thead {
+                display: none !important;
+            }
+            #zakres-table tr.zakres-row {
+                display: flex !important;
+                flex-wrap: wrap !important;
+                border: 1px solid #e2e8f0 !important;
+                border-radius: 6px !important;
+                padding: 10px !important;
+                margin-bottom: 10px !important;
+                background: #f8fafc !important;
+                box-sizing: border-box !important;
+            }
+            #zakres-table tr.zakres-row td {
+                display: block !important;
+                width: 100% !important;
+                padding: 4px 0 !important;
+                border: none !important;
+                box-sizing: border-box !important;
+            }
+            #zakres-table tr.zakres-row td:nth-child(1) {
+                order: 1 !important;
+            }
+            #zakres-table tr.zakres-row td:nth-child(1)::before {
+                content: "Element:" !important;
+                display: block !important;
+                font-size: 10px !important;
+                font-weight: 600 !important;
+                color: #64748b !important;
+                text-transform: uppercase !important;
+                margin-bottom: 2px !important;
+            }
+            #zakres-table tr.zakres-row td:nth-child(2) {
+                order: 2 !important;
+            }
+            #zakres-table tr.zakres-row td:nth-child(2)::before {
+                content: "Usługa:" !important;
+                display: block !important;
+                font-size: 10px !important;
+                font-weight: 600 !important;
+                color: #64748b !important;
+                text-transform: uppercase !important;
+                margin-bottom: 2px !important;
+            }
+            #zakres-table tr.zakres-row td:nth-child(3) {
+                order: 3 !important;
+                width: 70% !important;
+                display: inline-block !important;
+                vertical-align: middle !important;
+            }
+            #zakres-table tr.zakres-row td:nth-child(3)::before {
+                content: "Cena:" !important;
+                display: block !important;
+                font-size: 10px !important;
+                font-weight: 600 !important;
+                color: #64748b !important;
+                text-transform: uppercase !important;
+                margin-bottom: 2px !important;
+            }
+            #zakres-table tr.zakres-row td:nth-child(3) input {
+                width: 90px !important;
+            }
+            #zakres-table tr.zakres-row td:nth-child(4) {
+                order: 4 !important;
+                width: 30% !important;
+                display: inline-block !important;
+                text-align: right !important;
+                vertical-align: middle !important;
+                padding-top: 18px !important;
+            }
+            #zakres-table tr.zakres-row td:nth-child(4) button {
+                font-size: 24px !important;
+                color: #dc2626 !important;
+                padding: 0 10px !important;
+            }
+
+            #zakres-table tfoot,
+            #zakres-table tfoot tr,
+            #zakres-table tfoot td {
+                display: block !important;
+                width: 100% !important;
+                text-align: right !important;
+                padding: 10px 0 !important;
+                border: none !important;
+            }
+        }
+
+        @media screen and (min-width: 601px) and (max-width: 782px) {
+            #mundula-edit .form-table tr {
+                display: flex !important;
+                flex-wrap: nowrap !important;
+                align-items: center !important;
+            }
+            #mundula-edit .form-table th {
+                width: 38% !important;
+                display: block !important;
+                padding: 0 8px 0 0 !important;
+                margin: 0 !important;
+            }
+            #mundula-edit .form-table td {
+                width: 62% !important;
+                display: block !important;
+                padding: 0 !important;
+                margin: 0 !important;
+            }
+            /* Stack layout for textareas */
+            #mundula-edit .form-table tr:has(textarea) {
+                flex-direction: column !important;
+                align-items: stretch !important;
+            }
+            #mundula-edit .form-table tr:has(textarea) th,
+            #mundula-edit .form-table tr:has(textarea) td {
+                width: 100% !important;
+                padding-right: 0 !important;
+            }
+            #mundula-edit .form-table tr:has(textarea) th {
+                margin-bottom: 6px !important;
+            }
+        }
+
+        .zakres-table-wrapper {
+            width: 100%;
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+            margin-bottom: 12px;
+        }
+        #zakres-table {
+            width: 100%;
+            min-width: 480px;
+        }
+
+        .mundula-pricing-summary {
+            display: flex;
+            gap: 16px;
+            margin-bottom: 16px;
+        }
+        @media screen and (max-width: 782px) {
+            .mundula-pricing-summary {
+                flex-direction: column;
+                gap: 10px;
+            }
+        }
+
+        .mundula-edit-actions {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 12px;
+            margin-top: 20px;
+            padding: 16px;
+            background: #fff;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            box-sizing: border-box !important;
+        }
+        @media screen and (max-width: 782px) {
+            .mundula-edit-actions {
+                flex-direction: column-reverse !important;
+                align-items: stretch !important;
+                box-sizing: border-box !important;
+                padding: 12px !important;
+                width: 100% !important;
+            }
+            .mundula-edit-actions a,
+            .mundula-edit-actions button,
+            .mundula-edit-actions div {
+                text-align: center;
+                width: 100% !important;
+                display: block !important;
+                box-sizing: border-box !important;
+            }
+        }
+
+        /* Ukrycie stopki WordPress na podstronach wtyczki */
+        #wpfooter {
+            display: none !important;
+        }
+
+        #mundula-toast {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: #0f766e;
+            color: #fff;
+            padding: 12px 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            font-size: 13px;
+            z-index: 99999;
+            display: none;
+            line-height: 1.4;
+            white-space: pre-line;
+        }
+
+        .mundula-pay-tak {
+            color: #15803d !important;
+        }
+        .mundula-pay-tak div, .mundula-pay-tak strong {
+            color: #15803d !important;
+        }
+        .mundula-pay-czesciowo {
+            color: #b45309 !important;
+        }
+        .mundula-pay-czesciowo div, .mundula-pay-czesciowo strong {
+            color: #b45309 !important;
+        }
+        .mundula-pay-nie {
+            color: #dc2626 !important;
+        }
+        .mundula-pay-nie div, .mundula-pay-nie strong {
+            color: #dc2626 !important;
+        }
+
+.mundula-change-table td {
+        padding: 0 !important;
+    }
+    .mundula-change-table input[type="number"] {
+        width: 100% !important;
+        height: 32px !important;
+        border: 1px solid transparent !important;
+        background: transparent !important;
+        text-align: center !important;
+        font-size: 13px !important;
+        font-weight: 500 !important;
+        color: #333 !important;
+        box-sizing: border-box !important;
+        margin: 0 !important;
+        border-radius: 0 !important;
+        box-shadow: none !important;
+        -moz-appearance: textfield;
+    }
+    .mundula-change-table input[type="number"]::-webkit-outer-spin-button,
+    .mundula-change-table input[type="number"]::-webkit-inner-spin-button {
+        -webkit-appearance: none;
+        margin: 0;
+    }
+    .mundula-change-table input[type="number"]:focus {
+        background: #fff !important;
+        border-color: #2563eb !important;
+        box-shadow: inset 0 0 0 1px #2563eb !important;
+        outline: none !important;
+    }
+    .mundula-change-table input.changed-val {
+        color: #b45309 !important;
+        font-weight: 700 !important;
+        background: #fff8ee !important;
+    }
+    .mundula-change-table input.important-rate {
+        font-weight: 700 !important;
+        color: #000 !important;
+    }
+    .mundula-change-table th {
+        font-size: 11px !important;
+    }
+    .mundula-change-table td {
+        font-size: 12px !important;
+    }
+
+#mundula-edit .postbox-header { padding: 0; border-bottom: 1px solid #e2e4e7; }
+    #mundula-edit .postbox-header h2 { padding: 10px 16px; font-size: 14px; font-weight: 600; }
+    #mundula-edit .postbox { margin-bottom: 0; }
+    #mundula-edit .form-table th { padding: 10px 10px 10px 0; font-weight: 500; }
+    #mundula-edit .form-table td { padding: 6px 0; }
+    #mundula-panel .wp-list-table th { font-weight: 600; }
+
+.mundula-report-container {
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen-Sans, Ubuntu, Cantarell, "Helvetica Neue", sans-serif;
+        color: #1d2327;
+        margin-top: 20px;
+    }
+    .mundula-card-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+        gap: 20px;
+        margin-bottom: 24px;
+    }
+    .mundula-kpi-card {
+        background: #fff;
+        border-radius: 8px;
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.03);
+        padding: 20px;
+        display: flex;
+        align-items: center;
+        transition: transform 0.2s, box-shadow 0.2s;
+        border: 1px solid #e2e8f0;
+    }
+    .mundula-kpi-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 15px rgba(0, 0, 0, 0.06);
+    }
+    .mundula-kpi-icon-container {
+        width: 48px;
+        height: 48px;
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-right: 16px;
+        font-size: 24px;
+    }
+    .mundula-kpi-info {
+        flex-grow: 1;
+    }
+    .mundula-kpi-value {
+        font-size: 24px;
+        font-weight: 700;
+        margin: 0 0 2px 0;
+        line-height: 1.2;
+        color: #0f172a;
+    }
+    .mundula-kpi-label {
+        font-size: 11px;
+        color: #64748b;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: .03em;
+        margin: 0;
+    }
+
+    .kpi-orders { border-left: 4px solid #3b82f6; }
+    .kpi-orders .mundula-kpi-icon-container { background: #eff6ff; color: #3b82f6; }
+    .kpi-estimated { border-left: 4px solid #f59e0b; }
+    .kpi-estimated .mundula-kpi-icon-container { background: #fff8ee; color: #f59e0b; }
+    .kpi-final { border-left: 4px solid #10b981; }
+    .kpi-final .mundula-kpi-icon-container { background: #f0fdf4; color: #10b981; }
+    .kpi-queue { border-left: 4px solid #8b5cf6; }
+    .kpi-queue .mundula-kpi-icon-container { background: #f5f3ff; color: #8b5cf6; }
+    .kpi-operations { border-left: 4px solid #f43f5e; }
+    .kpi-operations .mundula-kpi-icon-container { background: #fff1f2; color: #f43f5e; }
+
+    .mundula-report-filters {
+        background: #fff;
+        border-radius: 8px;
+        border: 1px solid #e2e8f0;
+        padding: 14px 20px;
+        margin-bottom: 24px;
+        display: flex;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 16px;
+    }
+    .mundula-report-filters label {
+        font-weight: 600;
+        font-size: 13px;
+        color: #475569;
+    }
+    .mundula-report-filters select, .mundula-report-filters input[type=date] {
+        padding: 6px 10px;
+        border: 1px solid #cbd5e1;
+        border-radius: 4px;
+        font-size: 13px;
+        background: #fff;
+    }
+    .mundula-report-filters button {
+        background: #2563eb;
+        color: #fff;
+        border: 1px solid #2563eb;
+        padding: 6px 16px;
+        border-radius: 4px;
+        font-weight: 600;
+        font-size: 13px;
+        cursor: pointer;
+        transition: background 0.15s;
+    }
+    .mundula-report-filters button:hover {
+        background: #1d4ed8;
+    }
+
+    .mundula-report-grid-2 {
+        display: grid;
+        grid-template-columns: 3fr 2fr;
+        gap: 20px;
+        margin-bottom: 24px;
+    }
+    @media screen and (max-width: 960px) {
+        .mundula-report-grid-2 {
+            grid-template-columns: 1fr;
+        }
+    }
+
+    .mundula-report-box {
+        background: #fff;
+        border: 1px solid #e2e8f0;
+        border-radius: 8px;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.01);
+        overflow: hidden;
+    }
+    .mundula-report-box-header {
+        background: #f8fafc;
+        padding: 14px 20px;
+        border-bottom: 1px solid #e2e8f0;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+    .mundula-report-box-header h2 {
+        font-size: 15px;
+        font-weight: 600;
+        margin: 0;
+        color: #0f172a;
+    }
+    .mundula-report-box-body {
+        padding: 20px;
+    }
+
+    .mundula-report-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 13px;
+    }
+    .mundula-report-table th {
+        background: #f8fafc;
+        font-weight: 600;
+        color: #475569;
+        text-align: left;
+        padding: 10px 12px;
+        border-bottom: 2px solid #e2e8f0;
+    }
+    .mundula-report-table td {
+        padding: 10px 12px;
+        border-bottom: 1px solid #f1f5f9;
+        color: #334155;
+        vertical-align: middle;
+    }
+    .mundula-report-table tr:last-child td {
+        border-bottom: none;
+    }
+    .mundula-report-table tr:hover td {
+        background: #f8fafc;
+    }
+
+    .progress-bar-container {
+        background: #e2e8f0;
+        border-radius: 9999px;
+        height: 6px;
+        width: 80px;
+        overflow: hidden;
+        display: inline-block;
+        vertical-align: middle;
+        margin-left: 8px;
+    }
+    .progress-bar-fill {
+        height: 100%;
+        border-radius: 9999px;
+    }
+
+    /* Zapobieganie poziomemu przewijaniu na urządzeniach mobilnych */
+    #mundula-panel, #mundula-edit, .mundula-report-container {
+        max-width: 100% !important;
+        box-sizing: border-box !important;
+        overflow-x: hidden !important;
+    }
+
+    @media screen and (max-width: 782px) {
+        #mundula-edit h1, #mundula-panel h1 {
+            font-size: 18px !important;
+            line-height: 1.4 !important;
+            display: flex !important;
+            flex-direction: column !important;
+            align-items: flex-start !important;
+            gap: 6px !important;
+        }
+        #mundula-edit h1 span {
+            margin-left: 0 !important;
+            margin-top: 4px !important;
+            display: inline-block !important;
+        }
+
+        /* Make sure other inline containers wrap nicely on mobile */
+        #mundula-edit div[style*="margin-top:8px"] {
+            display: flex !important;
+            flex-direction: column !important;
+            align-items: stretch !important;
+            gap: 4px !important;
+        }
+        #mundula-edit div[style*="margin-top:8px"] input {
+            width: 100% !important;
+        }
+    }
