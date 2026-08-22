@@ -30,7 +30,7 @@ add_shortcode( 'mundula_kalkulator', 'mundula_kalkulator_shortcode' );
 // ── SKRYPTY I STYLE ──────────────────────────────────────────
 function mundula_enqueue_scripts() {
     global $post;
-    $is_kalkulator = is_page( 'cennik' ) || 
+    $is_kalkulator = is_page( 'cennik' ) ||
         ( is_a( $post, 'WP_Post' ) && has_shortcode( $post->post_content, 'mundula_kalkulator' ) );
 
     if ( $is_kalkulator ) {
@@ -264,10 +264,10 @@ function mundula_booking_handler() {
             'compare' => '='
         ];
     }
-    
+
     if ( ! empty( $meta_queries ) ) {
         $meta_queries['relation'] = 'OR';
-        
+
         $past_orders = get_posts([
             'post_type'      => 'mundula_zgloszenie',
             'posts_per_page' => 1,
@@ -314,7 +314,7 @@ function mundula_booking_handler() {
     if ( $contact_telefon ) {
         $meta_queries[] = [ 'key' => '_kontakt', 'value' => $contact_telefon ];
     }
-    
+
     if ( ! empty( $meta_queries ) ) {
         $meta_queries['relation'] = 'OR';
         $powiazana_wycena = get_posts([
@@ -332,7 +332,7 @@ function mundula_booking_handler() {
             'orderby'        => 'date',
             'order'          => 'DESC',
         ]);
-        
+
         if ( ! empty( $powiazana_wycena ) ) {
             $wycena_date = get_the_date( 'd.m.Y H:i', $powiazana_wycena[0]->ID );
             update_post_meta( $pid, '_wycena_wyslana', $contact_email ?: $contact_telefon );
@@ -365,7 +365,7 @@ function mundula_quote_handler() {
         wp_send_json_error( [ 'message' => 'Nieprawidłowy adres e-mail.' ], 400 );
     }
 
-    // Rate limiting — max 3 wyceny z jednego IP na godzinę
+    // Rate limiting — max 8 wycen z jednego IP na godzinę
     $ip_key   = 'mundula_quote_' . md5( $_SERVER['REMOTE_ADDR'] ?? '' );
     $attempts = (int) get_transient( $ip_key );
     if ( $attempts >= 8 ) {
@@ -539,14 +539,14 @@ function mundula_parse_date( $date_str ) {
     if ( ! $timestamp ) {
         $timestamp = strtotime( $date_str );
     }
-    
+
     if ( $timestamp ) {
         if ( strpos( $date_str, ':' ) !== false ) {
             return date( 'Y-m-d H:i:s', $timestamp );
         }
         return date( 'Y-m-d', $timestamp );
     }
-    
+
     return '';
 }
 
@@ -572,12 +572,12 @@ function mundula_format_date( $date_str ) {
 
     $timestamp = strtotime( $parsed );
     if ( ! $timestamp ) return $date_str;
-    
+
     // Jeśli w $parsed jest spacja i dwukropek, to ma czas
     if ( strpos( $parsed, ' ' ) !== false && strpos( $parsed, ':' ) !== false ) {
         return date( 'd.m.Y H:i', $timestamp );
     }
-    
+
     return date( 'd.m.Y', $timestamp );
 }
 
@@ -587,4 +587,3 @@ function mundula_format_date( $date_str ) {
 function mundula_format_date_input( $date_str ) {
     return mundula_parse_date( $date_str );
 }
-

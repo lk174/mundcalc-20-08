@@ -38,11 +38,11 @@ function mundula_clean_encoding( $str ) {
         'â€™' => '’',
     ];
     $str = str_replace( array_keys($replacements), array_values($replacements), $str );
-    
+
     // Ujednolicenie nazewnictwa: Oznaka rozpoznawcza -> Oznaka rozpoznawcza jednostki
     $str = str_replace( 'Oznaka rozpoznawcza jednostki', 'Oznaka rozpoznawcza', $str );
     $str = str_replace( 'Oznaka rozpoznawcza', 'Oznaka rozpoznawcza jednostki', $str );
-    
+
     return $str;
 }
 
@@ -57,7 +57,7 @@ function mundula_admin_enqueue( $hook ) {
         if ( ! empty($st_item['l']) ) {
             $l = trim($st_item['l']);
             $g = trim($st_item['g'] ?? '');
-            
+
             // Dopasowanie do formatu kalkulatora:
             if ( stripos($g, 'Stopnie') === 0 ) {
                 $cennik_uslugi[] = $l . ' — obszycie dystynkcji (stopień)';
@@ -69,7 +69,7 @@ function mundula_admin_enqueue( $hook ) {
             }
         }
     }
-    
+
     $base_elementy = [
         'Marynarka munduru galowego',
         'Marynarka munduru wyjściowego',
@@ -204,15 +204,15 @@ function mundula_view_photo_handler() {
     if ( ! current_user_can( 'manage_options' ) ) {
         wp_die( 'Forbidden', '', array( 'response' => 403 ) );
     }
-    
+
     $post_id = absint( $_GET['post_id'] ?? 0 );
     $file = sanitize_file_name( $_GET['file'] ?? '' );
     $nonce = $_GET['nonce'] ?? '';
-    
+
     if ( ! wp_verify_nonce( $nonce, 'mundula_view_photo_' . $file ) ) {
         wp_die( 'Błędny klucz zabezpieczający', '', array( 'response' => 403 ) );
     }
-    
+
     $photos = get_post_meta( $post_id, '_mundula_photos', true );
     $found = false;
     if ( is_array( $photos ) ) {
@@ -223,27 +223,27 @@ function mundula_view_photo_handler() {
             }
         }
     }
-    
+
     if ( ! $found ) {
         wp_die( 'Nie znaleziono pliku.', '', array( 'response' => 404 ) );
     }
-    
+
     $file_path = WP_CONTENT_DIR . '/uploads/mundula-private/' . $file;
     if ( ! file_exists( $file_path ) ) {
         wp_die( 'Plik nie istnieje na serwerze.', '', array( 'response' => 404 ) );
     }
-    
+
     $mime = mime_content_type( $file_path );
     if ( ! $mime || strpos( $mime, 'image/' ) !== 0 ) {
         wp_die( 'Niepoprawny typ pliku.', '', array( 'response' => 400 ) );
     }
-    
+
     header( 'Cache-Control: no-store, no-cache, must-revalidate, max-age=0' );
     header( 'Cache-Control: post-check=0, pre-check=0', false );
     header( 'Pragma: no-cache' );
     header( 'Content-Type: ' . $mime );
     header( 'Content-Length: ' . filesize( $file_path ) );
-    
+
     readfile( $file_path );
     exit;
 }
@@ -254,11 +254,11 @@ function mundula_delete_photo_handler() {
     $post_id = absint( $_GET['post_id'] ?? 0 );
     $file = sanitize_file_name( $_GET['file'] ?? '' );
     $nonce = $_GET['nonce'] ?? '';
-    
+
     if ( ! wp_verify_nonce( $nonce, 'mundula_delete_photo_' . $file ) ) {
         wp_die( 'Błędny klucz zabezpieczający' );
     }
-    
+
     $existing_photos = get_post_meta( $post_id, '_mundula_photos', true );
     if ( is_array( $existing_photos ) ) {
         $new_photos = [];
@@ -274,7 +274,7 @@ function mundula_delete_photo_handler() {
         }
         update_post_meta( $post_id, '_mundula_photos', $new_photos );
     }
-    
+
     wp_redirect( admin_url( 'admin.php?page=mundula-panel&action=edit&id=' . $post_id ) );
     exit;
 }
@@ -300,15 +300,15 @@ add_action( 'wp_ajax_mundula_delete', 'mundula_ajax_delete' );
 
 function mundula_mail_potwierdzenie( $post_id ) {
     $is_zbiorcze = get_post_meta( $post_id, '_zam_zbiorcze', true ) === '1';
-    
+
     $email = '';
     $imie  = '';
-    
+
     if ( $is_zbiorcze ) {
         $email = get_post_meta( $post_id, '_zbiorcze_email', true );
         $imie  = get_post_meta( $post_id, '_zbiorcze_nazwisko', true );
     }
-    
+
     if ( empty( $email ) ) {
         $email = get_post_meta( $post_id, '_email',   true )
               ?: get_post_meta( $post_id, '_kontakt', true );
@@ -515,9 +515,9 @@ function mundula_get_next_priority( $is_urgent, $exclude_post_id = 0 ) {
         ],
         'fields'         => 'ids',
     ]);
-    
+
     update_meta_cache( 'post', $active_posts );
-    
+
     $max_prio = -1;
     foreach ( $active_posts as $pid ) {
         if ( $pid === $exclude_post_id ) {
@@ -531,68 +531,68 @@ function mundula_get_next_priority( $is_urgent, $exclude_post_id = 0 ) {
             }
         }
     }
-    
+
     return $max_prio + 1;
 }
 
 
 function mundula_get_customer_orders_count( $tel, $email ) {
     static $cache = [];
-    
+
     $tel = trim((string)$tel);
     $email = trim((string)$email);
-    
+
     if ( empty($tel) && empty($email) ) {
         return 0;
     }
-    
+
     $cache_key = md5( $tel . '|' . $email );
     if ( isset( $cache[ $cache_key ] ) ) {
         return $cache[ $cache_key ];
     }
-    
+
     $version = get_option( 'mundula_coc_version', 1 );
     $transient_key = 'm_coc_' . $version . '_' . $cache_key;
-    $transient_key = substr( $transient_key, 0, 45 );
-    
+    // $transient_key jest w granicach dozwolonego limitu (172 znaki w WP)
+
     $count = get_transient( $transient_key );
     if ( $count !== false ) {
         $cache[ $cache_key ] = (int) $count;
         return (int) $count;
     }
-    
+
     global $wpdb;
-    
+
     $meta_clauses = [];
     $params = [ 'mundula_zgloszenie', 'publish' ];
-    
+
     if ( ! empty($tel) ) {
         $meta_clauses[] = "(meta_key IN ('_telefon', '_kontakt', '_zbiorcze_telefon') AND meta_value = %s)";
         $params[] = $tel;
     }
-    
+
     if ( ! empty($email) ) {
         $meta_clauses[] = "(meta_key IN ('_email', '_kontakt', '_zbiorcze_email') AND meta_value = %s)";
         $params[] = $email;
     }
-    
+
     $where_meta = implode( ' OR ', $meta_clauses );
-    
+
     $query = $wpdb->prepare(
-        "SELECT COUNT(DISTINCT post_id) 
+        "SELECT COUNT(DISTINCT post_id)
          FROM {$wpdb->postmeta} pm
          JOIN {$wpdb->posts} p ON p.ID = pm.post_id
-         WHERE p.post_type = %s 
-           AND p.post_status = %s 
+         WHERE p.post_type = %s
+           AND p.post_status = %s
            AND ($where_meta)",
         $params
     );
-    
+
     $count = (int) $wpdb->get_var( $query );
     $cache[ $cache_key ] = $count;
-    
+
     set_transient( $transient_key, $count, DAY_IN_SECONDS );
-    
+
     return $count;
 }
 
@@ -608,18 +608,18 @@ function mundula_pl_plural_zlecenie( $count ) {
     if ( $count === 1 ) {
         return '1 zlecenie';
     }
-    
+
     $last_digit = $count % 10;
     $last_two = $count % 100;
-    
+
     if ( in_array( $last_two, [11, 12, 13, 14] ) ) {
         return $count . ' zleceń';
     }
-    
+
     if ( in_array( $last_digit, [2, 3, 4] ) ) {
         return $count . ' zlecenia';
     }
-    
+
     return $count . ' zleceń';
 }
 
@@ -709,7 +709,7 @@ function mundula_shift_priorities_on_change_urgency( $post_id, $was_urgent, $old
 
 function mundula_reorder_priorities( $post_id, $new_prio, $is_urgent ) {
     $old_prio = get_post_meta( $post_id, '_priorytet', true );
-    
+
     // Pobierz wszystkie aktywne w danej kolejce
     $active_posts = get_posts([
         'post_type'      => 'mundula_zgloszenie',
@@ -724,9 +724,9 @@ function mundula_reorder_priorities( $post_id, $new_prio, $is_urgent ) {
         ],
         'fields'         => 'ids',
     ]);
-    
+
     update_meta_cache( 'post', $active_posts );
-    
+
     $queue_posts = [];
     foreach ( $active_posts as $pid ) {
         $p_urgent = get_post_meta( $pid, '_is_urgent', true ) === '1';
@@ -737,11 +737,11 @@ function mundula_reorder_priorities( $post_id, $new_prio, $is_urgent ) {
             }
         }
     }
-    
+
     // Sortuj tablicę po priorytecie
     asort($queue_posts);
     $max_prio = !empty($queue_posts) ? max($queue_posts) : -1;
-    
+
     // Korekta nowego priorytetu poza zakresem
     if ( $new_prio > $max_prio + 1 ) {
         $new_prio = $max_prio + 1;
@@ -749,7 +749,7 @@ function mundula_reorder_priorities( $post_id, $new_prio, $is_urgent ) {
     if ( $new_prio < 0 ) {
         $new_prio = 0;
     }
-    
+
     if ( $old_prio === '' ) {
         // Nowy priorytet (wstawienie)
         foreach ( $queue_posts as $pid => $prio ) {
@@ -761,7 +761,7 @@ function mundula_reorder_priorities( $post_id, $new_prio, $is_urgent ) {
     } else {
         $old_prio = (int)$old_prio;
         if ( $old_prio === $new_prio ) return;
-        
+
         if ( $new_prio < $old_prio ) {
             // Przeniesienie w górę (np. 3 -> 1): zwiększ priorytety pomiędzy new a old
             foreach ( $queue_posts as $pid => $prio ) {
@@ -790,7 +790,7 @@ function mundula_ajax_priorytet() {
     $post_id   = absint( $_POST['post_id']   ?? 0 );
     $priorytet = absint( $_POST['priorytet'] ?? 0 );
     $is_urgent = get_post_meta( $post_id, '_is_urgent', true ) === '1';
-    
+
     mundula_reorder_priorities( $post_id, $priorytet, $is_urgent );
     wp_send_json_success();
 }
@@ -842,6 +842,72 @@ add_action( 'admin_init', function() {
     }
 });
 
+function mundula_handle_photos_upload( $post_id, $files ) {
+    if ( empty( $files['name'][0] ) ) {
+        return [];
+    }
+
+    $allowed_extensions = [ 'jpg', 'jpeg', 'png', 'webp', 'gif', 'heic', 'heif', 'pdf' ];
+    $allowed_mimes      = [ 'image/jpeg', 'image/png', 'image/webp', 'image/gif', 'image/heic', 'image/heif', 'application/pdf' ];
+
+    $upload_dir = WP_CONTENT_DIR . '/uploads/mundula-private/';
+    if ( ! file_exists( $upload_dir ) ) {
+        wp_mkdir_p( $upload_dir );
+        $htaccess_content = "Order deny,allow
+Deny from all
+Require all denied
+";
+        file_put_contents( $upload_dir . '.htaccess', $htaccess_content );
+    }
+
+    $existing_photos = get_post_meta( $post_id, '_mundula_photos', true );
+    if ( ! is_array( $existing_photos ) ) {
+        $existing_photos = [];
+    }
+
+    $count    = is_array($files['name']) ? count($files['name']) : 0;
+    $uploaded = [];
+
+    for ( $i = 0; $i < $count; $i++ ) {
+        if ( isset( $files['error'][$i] ) && $files['error'][$i] === UPLOAD_ERR_OK ) {
+            $tmp_name      = $files['tmp_name'][$i];
+            $original_name = sanitize_file_name( $files['name'][$i] );
+            $ext           = strtolower( pathinfo( $original_name, PATHINFO_EXTENSION ) );
+
+            if ( ! in_array( $ext, $allowed_extensions, true ) ) {
+                continue;
+            }
+
+            if ( function_exists( 'mime_content_type' ) && file_exists( $tmp_name ) ) {
+                $mime = mime_content_type( $tmp_name );
+                if ( $mime && ! in_array( $mime, $allowed_mimes, true ) && strpos( $mime, 'image/' ) !== 0 ) {
+                    continue;
+                }
+            }
+
+            $new_filename = 'photo_' . $post_id . '_' . wp_generate_password( 12, false ) . '.' . $ext;
+            $destination  = $upload_dir . $new_filename;
+
+            if ( move_uploaded_file( $tmp_name, $destination ) ) {
+                $photo_data = [
+                    'file' => $new_filename,
+                    'name' => $original_name,
+                    'date' => current_time( 'mysql' )
+                ];
+                $existing_photos[] = $photo_data;
+
+                $photo_data['view_url']   = admin_url('admin-post.php?action=mundula_view_photo&post_id=' . $post_id . '&file=' . urlencode($new_filename) . '&nonce=' . wp_create_nonce('mundula_view_photo_' . $new_filename));
+                $photo_data['delete_url'] = admin_url('admin-post.php?action=mundula_delete_photo&post_id=' . $post_id . '&file=' . urlencode($new_filename) . '&nonce=' . wp_create_nonce('mundula_delete_photo_' . $new_filename));
+
+                $uploaded[] = $photo_data;
+            }
+        }
+    }
+
+    update_post_meta( $post_id, '_mundula_photos', $existing_photos );
+    return $uploaded;
+}
+
 function mundula_ajax_upload_photo() {
     check_ajax_referer( 'mundula_admin_nonce', 'nonce' );
     if ( ! current_user_can( 'manage_options' ) ) wp_send_json_error( [ 'message' => 'Forbidden' ] );
@@ -853,50 +919,7 @@ function mundula_ajax_upload_photo() {
         wp_send_json_error( [ 'message' => 'Brak plików' ] );
     }
 
-    $upload_dir = WP_CONTENT_DIR . '/uploads/mundula-private/';
-    if ( ! file_exists( $upload_dir ) ) {
-        wp_mkdir_p( $upload_dir );
-        $htaccess_content = "Order deny,allow\nDeny from all\nRequire all denied\n";
-        file_put_contents( $upload_dir . '.htaccess', $htaccess_content );
-    }
-
-    $existing_photos = get_post_meta( $post_id, '_mundula_photos', true );
-    if ( ! is_array( $existing_photos ) ) {
-        $existing_photos = [];
-    }
-
-    $files = $_FILES['mundula_photos'];
-    $count = count( $files['name'] );
-    $uploaded = [];
-
-    for ( $i = 0; $i < $count; $i++ ) {
-        if ( $files['error'][$i] === UPLOAD_ERR_OK ) {
-            $tmp_name = $files['tmp_name'][$i];
-            $original_name = sanitize_file_name( $files['name'][$i] );
-            $ext = pathinfo( $original_name, PATHINFO_EXTENSION );
-            
-            $new_filename = 'photo_' . $post_id . '_' . wp_generate_password( 12, false ) . '.' . $ext;
-            $destination = $upload_dir . $new_filename;
-            
-            if ( move_uploaded_file( $tmp_name, $destination ) ) {
-                $photo_data = [
-                    'file' => $new_filename,
-                    'name' => $original_name,
-                    'date' => current_time( 'mysql' )
-                ];
-                $existing_photos[] = $photo_data;
-                
-                // Generuj URL-e
-                $photo_data['view_url'] = admin_url('admin-post.php?action=mundula_view_photo&post_id=' . $post_id . '&file=' . urlencode($new_filename) . '&nonce=' . wp_create_nonce('mundula_view_photo_' . $new_filename));
-                $photo_data['delete_url'] = admin_url('admin-post.php?action=mundula_delete_photo&post_id=' . $post_id . '&file=' . urlencode($new_filename) . '&nonce=' . wp_create_nonce('mundula_delete_photo_' . $new_filename));
-                
-                $uploaded[] = $photo_data;
-            }
-        }
-    }
-
-    update_post_meta( $post_id, '_mundula_photos', $existing_photos );
+    $uploaded = mundula_handle_photos_upload( $post_id, $_FILES['mundula_photos'] );
     wp_send_json_success( [ 'photos' => $uploaded ] );
 }
 add_action( 'wp_ajax_mundula_upload_photo', 'mundula_ajax_upload_photo' );
-

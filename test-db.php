@@ -1,6 +1,13 @@
 <?php
 define('WP_USE_THEMES', false);
-require_once('../../wp-load.php');
+if ( file_exists( __DIR__ . '/../../wp-load.php' ) ) {
+    require_once __DIR__ . '/../../wp-load.php';
+    if ( ! current_user_can( 'manage_options' ) ) {
+        wp_die( 'Dostęp zabroniony.' );
+    }
+} else {
+    wp_die( 'Nie można załadować środowiska WordPress.' );
+}
 
 $option = get_option('mundula_price_change', []);
 $file = WP_CONTENT_DIR . '/kalkulator/mundula-price-change-default.json';

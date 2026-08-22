@@ -64,9 +64,9 @@ function mundula_save_zlecenie() {
     } else {
         $old_is_urgent = get_post_meta( $post_id, '_is_urgent', true ) === '1';
         $new_is_urgent = isset( $_POST['is_urgent'] ) && $_POST['is_urgent'] === '1';
-        
+
         $prio_input = isset($_POST['priorytet']) ? trim($_POST['priorytet']) : '';
-        
+
         if ( $old_is_urgent !== $new_is_urgent ) {
             // Zmiana pilności zlecenia!
             // 1. Przesuń priorytety w dotychczasowej kolejce
@@ -74,7 +74,7 @@ function mundula_save_zlecenie() {
             if ( $old_prio !== '' ) {
                 mundula_shift_priorities_on_change_urgency( $post_id, $old_is_urgent, (int)$old_prio );
             }
-            
+
             // 2. Zapisz nową flagę pilności i obsłuż przywracanie priorytetu
             if ( $new_is_urgent ) {
                 update_post_meta( $post_id, '_is_urgent', '1' );
@@ -84,16 +84,177 @@ function mundula_save_zlecenie() {
                 } else {
                     delete_post_meta( $post_id, '_prev_standard_priority' );
                 }
-                
+
                 // Przypisz na koniec nowej kolejki (pilnej)
                 update_post_meta( $post_id, '_priorytet', mundula_get_next_priority( true, $post_id ) );
             } else {
                 delete_post_meta( $post_id, '_is_urgent' );
-                
+
                 // Sprawdź, czy mamy zapisany poprzedni priorytet standardowy
                 $prev_prio = get_post_meta( $post_id, '_prev_standard_priority', true );
                 delete_post_meta( $post_id, '_prev_standard_priority' );
-                
+
+                if ( $prev_prio !== '' ) {
+                    // Wstaw z powrotem na zapisaną pozycję
+                    mundula_reorder_priorities( $post_id, (int)$prev_prio, false );
+                } else {
+                    // Brak poprzedniego priorytetu -> przypisz na koniec kolejki standardowej
+                    update_post_meta( $post_id, '_priorytet', mundula_get_next_priority( false, $post_id ) );
+                }
+            }
+        } else {
+            // Brak zmiany pilności, po prostu zaktualizuj priorytet
+            if ( $prio_input !== '' ) {
+                $new_prio = absint( $prio_input );
+                mundula_reorder_priorities( $post_id, $new_prio, $new_is_urgent );
+            } else {
+                // Jeśli pole priorytetu jest puste w formularzu:
+                // Usuwamy ręczny priorytet
+                $old_prio = get_post_meta( $post_id, '_priorytet', true );
+                if ( $old_prio !== '' ) {
+                    mundula_shift_priorities_on_change_urgency( $post_id, $new_is_urgent, (int)$old_prio );
+                }
+                delete_post_meta( $post_id, '_priorytet' );
+            }
+        }
+    }
+
+    // Zapisz edytowane pozycje zakresu
+    $items = [];
+    if ( isset( $_POST['zakres_items'] ) && is_array( $_POST['zakres_items'] ) ) {
+        foreach ( $_POST['zakres_items'] as $item ) {
+            $items[] = [
+                'elemLabel' => wp_unslash( $item['elemLabel'] ?? '' ),
+                'itemLabel' => wp_unslash( $item['itemLabel'] ?? '' ),
+                'price'     => absint( $item['price'] ?? 0 ),
+            ];
+        }
+        update_post_meta( $post_id, '_zakres_json', json_encode( $items, JSON_UNESCAPED_UNICODE ) );
+    }
+
+    // Zapisz wydane elementy i pozostałe elementy (tylko w przypadku wydania częściowego)
+    $wydanie_status = sanitize_text_field( $_POST['wydanie_status'] ?? 'calosc' );
+    if ( $wydanie_status === 'czesc' ) {
+        $wydane = isset( $_POST['wydane_elementy'] ) && is_array( $_POST['wydane_elementy'] ) ? array_map( 'sanitize_text_field', $_POST['wydane_elementy'] ) : [];
+        update_post_meta( $post_id, '_wydane_elementy', $wydane );
+
+        // Wylicz pozostałe elementy do wydania na bazie zakresu prac
+        $pozostaje = [];
+        $unique_elems = [];
+        foreach ( $items as $item ) {
+            $elem = trim( sanitize_text_field( $item['elemLabel'] ?? '' ) );
+            if ( $elem && ! in_array( $elem, $unique_elems ) ) {
+                $unique_elems[] = $elem;
+            }
+        }
+        foreach ( $unique_elems as $elem ) {
+            if ( ! in_array( $elem, $wydane ) ) {
+                $pozostaje[] = $elem;
+            }
+        }
+        update_post_meta( $post_id, '_pozostaje_do_wydania', $pozostaje );
+    } else {
+        update_post_meta( $post_id, '_wydane_elementy', [] );
+        update_post_meta( $post_id, '_pozostaje_do_wydania', [] );
+    }
+
+    // Odbierz i zapisz prywatne zdjęcia
+    if ( ! empty( $_FILES['mundula_photos']['name'][0] ) ) {
+        mundula_handle_photos_upload( $post_id, $_FILES['mundula_photos'] );
+    }    if ( ! isset( $_POST['mundula_nonce_zlecenie'] ) ) return;
+    if ( ! wp_verify_nonce( $_POST['mundula_nonce_zlecenie'], 'mundula_save_zlecenie' ) ) return;
+    if ( ! current_user_can( 'manage_options' ) ) return;
+
+    $post_id = absint( $_POST['post_id'] ?? 0 );
+    if ( ! $post_id ) return;
+
+    // Przygotuj elementy dostarczone z ilościami
+    $elementy_dostarczone_cb = (array) ( $_POST['elementy_dostarczone'] ?? [] );
+    $elementy_ilosc = (array) ( $_POST['elementy_ilosc'] ?? [] );
+    $elementy_zapis = [];
+    foreach ( $elementy_dostarczone_cb as $k ) {
+        $k = sanitize_key( $k );
+        $qty = isset( $elementy_ilosc[$k] ) ? max( 1, intval( $elementy_ilosc[$k] ) ) : 1;
+        $elementy_zapis[$k] = $qty;
+    }
+
+    $fields = [
+        '_status'          => sanitize_text_field( $_POST['status']          ?? '' ),
+        '_imie_nazwisko'   => sanitize_text_field( $_POST['imie_nazwisko']   ?? '' ),
+        '_telefon'         => sanitize_text_field( $_POST['telefon']         ?? '' ),
+        '_email'           => sanitize_email(      $_POST['email']           ?? '' ),
+        '_dostawa'         => sanitize_text_field( $_POST['dostawa']         ?? '' ),
+        '_rodzaj_munduru'  => sanitize_text_field( $_POST['rodzaj_munduru']  ?? '' ),
+        '_adres'           => sanitize_textarea_field( mundula_build_adres( $_POST ) ),
+        '_notatki'         => sanitize_textarea_field( $_POST['notatki']     ?? '' ),
+        '_elementy_dostarczone' => json_encode( $elementy_zapis, JSON_UNESCAPED_UNICODE ),
+        '_elementy_inne'        => sanitize_text_field( $_POST['elementy_inne'] ?? '' ),
+        '_data_dostawy'    => mundula_parse_date( $_POST['data_dostawy']    ?? '' ),
+        '_data_potrzebna'  => mundula_parse_date( $_POST['data_potrzebna']  ?? '' ),
+        '_data_realizacji' => mundula_parse_date( $_POST['data_realizacji'] ?? '' ),
+        '_data_wydania'             => mundula_parse_date( $_POST['data_wydania']              ?? '' ),
+        '_data_przyjecia'           => mundula_parse_date( $_POST['data_przyjecia']            ?? '' ),
+        '_data_fizycznej_realizacji'=> mundula_parse_date( $_POST['data_fizycznej_realizacji'] ?? '' ),
+        '_cena_finalna'    => absint( $_POST['cena_finalna'] ?? 0 ),
+        '_stopien'         => sanitize_text_field( $_POST['stopien']         ?? '' ),
+        '_stopien_obszyty' => isset( $_POST['stopien_obszyty'] ) ? sanitize_text_field( $_POST['stopien_obszyty'] ) : get_post_meta( $post_id, '_stopien_obszyty', true ),
+        '_zam_zbiorcze'      => isset($_POST['zam_zbiorcze']) ? '1' : '0',
+        '_zbiorcze_nazwisko' => sanitize_text_field( $_POST['zbiorcze_nazwisko'] ?? '' ),
+        '_zbiorcze_telefon'  => sanitize_text_field( $_POST['zbiorcze_telefon']  ?? '' ),
+        '_zbiorcze_email'    => sanitize_email(      $_POST['zbiorcze_email']    ?? '' ),
+        '_payment_status'      => sanitize_text_field( $_POST['payment_status'] ?? 'nie' ),
+        '_payment_method'      => sanitize_text_field( $_POST['payment_method'] ?? '' ),
+        '_payment_amount_paid' => isset($_POST['payment_amount_paid']) ? absint( $_POST['payment_amount_paid'] ) : 0,
+        '_payment_date'        => mundula_parse_date( $_POST['payment_date'] ?? '' ),
+        '_payment_invoice'     => isset($_POST['payment_invoice']) ? '1' : '0',
+        '_wydanie_status'            => sanitize_text_field( $_POST['wydanie_status'] ?? 'calosc' ),
+        '_data_wydania_czesciowego'   => mundula_parse_date( $_POST['data_wydania_czesciowego'] ?? '' ),
+        '_wydano_pokrowiec'          => isset( $_POST['wydano_pokrowiec'] ) ? 'yes' : 'no',
+        '_trudny_klient'             => isset( $_POST['trudny_klient'] ) ? '1' : '0',
+    ];
+
+    foreach ( $fields as $key => $val ) {
+        update_post_meta( $post_id, $key, $val );
+    }
+
+    // Obsługa pilności i priorytetu
+    $status = sanitize_text_field( $_POST['status'] ?? '' );
+    if ( $status === 'zrealizowane' || $status === 'anulowane' || $status === 'wyslane_odebrane' ) {
+        delete_post_meta( $post_id, '_priorytet' );
+        delete_post_meta( $post_id, '_is_urgent' );
+    } else {
+        $old_is_urgent = get_post_meta( $post_id, '_is_urgent', true ) === '1';
+        $new_is_urgent = isset( $_POST['is_urgent'] ) && $_POST['is_urgent'] === '1';
+
+        $prio_input = isset($_POST['priorytet']) ? trim($_POST['priorytet']) : '';
+
+        if ( $old_is_urgent !== $new_is_urgent ) {
+            // Zmiana pilności zlecenia!
+            // 1. Przesuń priorytety w dotychczasowej kolejce
+            $old_prio = get_post_meta( $post_id, '_priorytet', true );
+            if ( $old_prio !== '' ) {
+                mundula_shift_priorities_on_change_urgency( $post_id, $old_is_urgent, (int)$old_prio );
+            }
+
+            // 2. Zapisz nową flagę pilności i obsłuż przywracanie priorytetu
+            if ( $new_is_urgent ) {
+                update_post_meta( $post_id, '_is_urgent', '1' );
+                // Zapisz dotychczasowy priorytet standardowy do przywrócenia w przyszłości
+                if ( $old_prio !== '' ) {
+                    update_post_meta( $post_id, '_prev_standard_priority', $old_prio );
+                } else {
+                    delete_post_meta( $post_id, '_prev_standard_priority' );
+                }
+
+                // Przypisz na koniec nowej kolejki (pilnej)
+                update_post_meta( $post_id, '_priorytet', mundula_get_next_priority( true, $post_id ) );
+            } else {
+                delete_post_meta( $post_id, '_is_urgent' );
+
+                // Sprawdź, czy mamy zapisany poprzedni priorytet standardowy
+                $prev_prio = get_post_meta( $post_id, '_prev_standard_priority', true );
+                delete_post_meta( $post_id, '_prev_standard_priority' );
+
                 if ( $prev_prio !== '' ) {
                     // Wstaw z powrotem na zapisaną pozycję
                     mundula_reorder_priorities( $post_id, (int)$prev_prio, false );
@@ -169,24 +330,24 @@ Require all denied
 ";
             file_put_contents( $upload_dir . '.htaccess', $htaccess_content );
         }
-        
+
         $existing_photos = get_post_meta( $post_id, '_mundula_photos', true );
         if ( ! is_array( $existing_photos ) ) {
             $existing_photos = [];
         }
-        
+
         $files = $_FILES['mundula_photos'];
         $count = count( $files['name'] );
-        
+
         for ( $i = 0; $i < $count; $i++ ) {
             if ( $files['error'][$i] === UPLOAD_ERR_OK ) {
                 $tmp_name = $files['tmp_name'][$i];
                 $original_name = sanitize_file_name( $files['name'][$i] );
                 $ext = pathinfo( $original_name, PATHINFO_EXTENSION );
-                
+
                 $new_filename = 'photo_' . $post_id . '_' . wp_generate_password( 12, false ) . '.' . $ext;
                 $destination = $upload_dir . $new_filename;
-                
+
                 if ( move_uploaded_file( $tmp_name, $destination ) ) {
                     $existing_photos[] = [
                         'file' => $new_filename,
@@ -196,7 +357,7 @@ Require all denied
                 }
             }
         }
-        
+
         update_post_meta( $post_id, '_mundula_photos', $existing_photos );
     }
 
@@ -351,7 +512,7 @@ function mundula_render_edit_metabox_order( $post_id, $status, $m, $sv ) {
                 <tr id="payment-amount-row" style="display: <?= $pay_status === 'czesciowo' ? 'table-row' : 'none' ?>;">
                     <th>Wpłacona kwota</th>
                     <td>
-                        <input type="number" name="payment_amount_paid" id="payment-amount-paid-input" 
+                        <input type="number" name="payment_amount_paid" id="payment-amount-paid-input"
                                value="<?= esc_attr($m['_payment_amount_paid'] ?: 0) ?>" min="0" style="width:120px"> <strong>zł</strong>
                     </td>
                 </tr>
@@ -367,7 +528,7 @@ function mundula_render_edit_metabox_order( $post_id, $status, $m, $sv ) {
                         </select>
                     </td>
                 </tr>
-                <?php 
+                <?php
                 $show_extra = ($pay_status === 'czesciowo' || $pay_status === 'tak') && ($pay_method === 'blik' || $pay_method === 'przelew');
                 ?>
                 <tr id="payment-date-row" style="display: <?= $show_extra ? 'table-row' : 'none' ?>;">
@@ -392,7 +553,7 @@ function mundula_render_edit_metabox_order( $post_id, $status, $m, $sv ) {
                     </td>
                 </tr>
             </table>
-                        
+
             <?php if ( $status === MUNDULA_STATUS_REZERWACJA || $status === MUNDULA_STATUS_ZLECENIE ):
                 $pot_data  = get_post_meta($post_id,'_potwierdzenie_wyslane',true);
                 $has_email = !empty(get_post_meta($post_id,'_email',true));
@@ -472,10 +633,10 @@ function mundula_render_edit_metabox_dates( $post_id, $created, $m ) {
                 <tr>
                     <th>Krytyczna data gotowości</th>
                     <td>
-                        <?php 
+                        <?php
                         $dg = $m['_data_potrzebna'];
                         $is_urgent = $m['_is_urgent'] === '1';
-                        
+
                         $dg_date_value = '';
                         if ($dg) {
                             $parsed_dg = mundula_parse_date($dg);
@@ -551,7 +712,7 @@ function mundula_render_edit_metabox_customer( $m ) {
                 <input type="checkbox" name="trudny_klient" value="1" <?= checked($m['_trudny_klient'], '1', false) ?>>
                 ⚠️ Trudny klient
             </label>
-            
+
             <div id="zbiorcze-fields-container" style="display: <?= $m['_zam_zbiorcze'] === '1' ? 'block' : 'none' ?>; border-top: 1px solid #eee; padding-top: 12px; margin-top: 8px; margin-bottom: 16px;">
                 <table class="form-table" style="margin:0">
                     <tr>
@@ -607,7 +768,7 @@ function mundula_render_edit_metabox_customer( $m ) {
                     </td>
                 </tr>
             </table>
-            
+
             <!-- Kopiowanie etykiety P15 -->
             <div style="margin-top:16px; padding-top:12px; border-top:1px solid #eee; display:flex; justify-content:flex-end;">
                 <button type="button" id="mundula-copy-label-edit-btn" class="button" style="background:#0f766e;color:#fff;border-color:#0f766e;">
@@ -707,14 +868,14 @@ function mundula_render_edit_metabox_delivery( $post_id, $m ) {
                             </select>
                         </td>
                     </tr>
-                    
+
                     <tr class="sekcja-wydanie-czesciowe" style="display: <?= $wydanie_status === 'czesc' ? 'table-row' : 'none' ?>">
                         <th>Data częściowego wydania / wysyłki</th>
                         <td>
                             <input type="date" name="data_wydania_czesciowego" value="<?= esc_attr($data_wydania_czesciowego) ?>" style="width:100%">
                         </td>
                     </tr>
-                    
+
                     <tr class="sekcja-wydanie-czesciowe" style="display: <?= $wydanie_status === 'czesc' ? 'table-row' : 'none' ?>">
                         <th>Wydane / wysłane elementy</th>
                         <td>
@@ -727,7 +888,7 @@ function mundula_render_edit_metabox_delivery( $post_id, $m ) {
                             </div>
                         </td>
                     </tr>
-                    
+
                     <tr class="sekcja-wydanie-czesciowe" style="display: <?= $wydanie_status === 'czesc' ? 'table-row' : 'none' ?>">
                         <th>Pozostaje do wydania / wysyłki</th>
                         <td>
@@ -736,7 +897,7 @@ function mundula_render_edit_metabox_delivery( $post_id, $m ) {
                             </div>
                         </td>
                     </tr>
-                    
+
                     <?php
                     $wydano_pokrowiec = get_post_meta($post_id, '_wydano_pokrowiec', true) === 'yes';
                     ?>
@@ -1046,10 +1207,10 @@ function mundula_render_edit_metabox_photos( $post_id ) {
                 $photos = [];
             }
             ?>
-            
+
             <?php if ( ! empty($photos) ): ?>
                 <div id="mundula-photos-grid" style="display:grid; grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); gap:12px; margin-bottom:16px;">
-                    <?php foreach ( $photos as $p ): 
+                    <?php foreach ( $photos as $p ):
                         $view_url = admin_url('admin-post.php?action=mundula_view_photo&post_id=' . $post_id . '&file=' . urlencode($p['file']) . '&nonce=' . wp_create_nonce('mundula_view_photo_' . $p['file']));
                         $delete_url = admin_url('admin-post.php?action=mundula_delete_photo&post_id=' . $post_id . '&file=' . urlencode($p['file']) . '&nonce=' . wp_create_nonce('mundula_delete_photo_' . $p['file']));
                     ?>
@@ -1099,10 +1260,10 @@ function mundula_render_edit_actions() {
 
 function mundula_find_rank_in_string( $str ) {
     if ( empty( $str ) ) return '';
-    
+
     // Normalize arrows
     $str = str_replace( [ '→', '->', '=>' ], '>', $str );
-    
+
     // If there is an arrow, prioritize the part after the arrow
     if ( strpos( $str, '>' ) !== false ) {
         $parts = explode( '>', $str );
@@ -1110,7 +1271,7 @@ function mundula_find_rank_in_string( $str ) {
     } else {
         $search_str = $str;
     }
-    
+
     $ranks = [
         'Starszy szeregowy specjalista',
         'Starszy sierżant sztabowy',
@@ -1149,7 +1310,7 @@ function mundula_find_rank_in_string( $str ) {
         'Kapral',
         'Major'
     ];
-    
+
     $search_str_lower = mb_strtolower( $search_str );
     foreach ( $ranks as $rank ) {
         $rank_lower = mb_strtolower( $rank );
@@ -1157,7 +1318,7 @@ function mundula_find_rank_in_string( $str ) {
             return $rank;
         }
     }
-    
+
     return '';
 }
 
@@ -1356,7 +1517,7 @@ function mundula_panel_raporty() {
             $dostawa_meta = get_post_meta( $p->ID, '_dostawa', true ) ?: 'osobisty';
             $is_ship = ($dostawa_meta === 'paczkomat' || $dostawa_meta === 'kurier');
             $rev_key = $is_ship ? 'wysylka' : 'odbior';
-            
+
             $revenue_stats[$rev_key]['count']++;
             $revenue_stats[$rev_key]['estimated'] += $kwota;
             if ( in_array( $status, ['zrealizowane', 'wyslane_odebrane'] ) ) {
@@ -1545,7 +1706,7 @@ function mundula_panel_raporty() {
     arsort( $popular_elems );
     $top_elems = array_slice( $popular_elems, 0, 10, true );
     ?>
-    
+
 
     <div class="wrap mundula-report-container">
         <h1>📊 Raporty i statystyki</h1>
@@ -1553,21 +1714,21 @@ function mundula_panel_raporty() {
         <!-- FILTRY OKRESU -->
         <form method="get" action="admin.php" class="mundula-report-filters">
             <input type="hidden" name="page" value="mundula-raporty">
-            
+
             <label for="period-select">Okres raportowania:</label>
             <select name="period" id="period-select">
                 <?php foreach ($periods as $k => $v): ?>
                     <option value="<?= $k ?>" <?= selected($period, $k, false) ?>><?= $v ?></option>
                 <?php endforeach; ?>
             </select>
-            
+
             <span class="custom-date-fields" style="display: <?= $period === 'custom' ? 'inline-flex' : 'none' ?>; align-items: center; gap: 8px;">
                 <label for="date-from">Od:</label>
                 <input type="date" name="date_from" id="date-from" value="<?= esc_attr($date_from) ?>">
                 <label for="date-to">Do:</label>
                 <input type="date" name="date_to" id="date-to" value="<?= esc_attr($date_to) ?>">
             </span>
-            
+
             <button type="submit" class="button">Filtruj dane</button>
         </form>
 
@@ -1630,7 +1791,7 @@ function mundula_panel_raporty() {
                                 </tr>
                             </thead>
                             <tbody>
-                                <?php foreach ($stats_by_status as $st_key => $st_val): 
+                                <?php foreach ($stats_by_status as $st_key => $st_val):
                                     $st_info = $MUNDULA_STATUSY[$st_key] ?? [ 'label' => $st_key, 'color' => '#666', 'bg' => '#eee' ];
                                     $pct = $total_estimated > 0 ? round(($st_val['estimated'] / $total_estimated) * 100) : 0;
                                 ?>
@@ -1676,7 +1837,7 @@ function mundula_panel_raporty() {
                                 </tr>
                             </thead>
                             <tbody>
-                                <?php foreach ($revenue_stats as $rev_key => $rev_val): 
+                                <?php foreach ($revenue_stats as $rev_key => $rev_val):
                                     $pct = $total_estimated > 0 ? round(($rev_val['estimated'] / $total_estimated) * 100) : 0;
                                     $color = ($rev_key === 'wysylka') ? '#2563eb' : '#16a34a';
                                     $bg = ($rev_key === 'wysylka') ? '#eff6ff' : '#f0fdf4';
@@ -1785,11 +1946,11 @@ function mundula_panel_raporty() {
                             </button>
                         </div>
                     </div>
-                    <input type="text" id="queue-search" placeholder="Filtruj tabelę (stopień, element)..." 
+                    <input type="text" id="queue-search" placeholder="Filtruj tabelę (stopień, element)..."
                            style="padding: 4px 10px; border: 1px solid #cbd5e1; border-radius: 4px; font-size: 12px; width: 220px;">
                 </div>
                 <div class="mundula-report-box-body" style="padding: 10px 20px; max-height: 500px; overflow-y: auto;">
-                    
+
                     <!-- Zestawienie 1: Fizyczne mundury -->
                     <div id="tab-mundury" class="mundula-tab-content">
                         <table class="mundula-report-table">
@@ -1939,8 +2100,8 @@ function mundula_panel_raporty() {
                                         <ul style="margin: 0; padding-left: 15px;">
                                             <?php foreach ($dbg['items_mapped'] as $it): ?>
                                                 <li>
-                                                    <span style="font-weight: 600; color: #0284c7;"><?= esc_html($it['rank']) ?></span> → <?= esc_html($it['elem']) ?> 
-                                                    (<?= esc_html($it['desc']) ?>) - 
+                                                    <span style="font-weight: 600; color: #0284c7;"><?= esc_html($it['rank']) ?></span> → <?= esc_html($it['elem']) ?>
+                                                    (<?= esc_html($it['desc']) ?>) -
                                                     <strong><?= $it['type'] ?></strong>
                                                 </li>
                                             <?php endforeach; ?>
@@ -1955,7 +2116,6 @@ function mundula_panel_raporty() {
         </div>
     </div>
 
-    
+
     <?php
 }
-
